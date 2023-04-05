@@ -37,12 +37,7 @@
       w = w || topWindow;
       return w !== w.top;
     }
-  
-    if (!isInIFrame()) {
-      console.log("%c%s", 'color:blue;font-weight:bold;', 'for more about webgl-utils.js see:');  // eslint-disable-line
-      console.log("%c%s", 'color:blue;font-weight:bold;', 'https://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html');  // eslint-disable-line
-    }
-  
+
     /**
      * Wrapped logging function.
      * @param {string} msg The message to log.
@@ -63,7 +58,6 @@
      * @param {string} msg error message.
      * @memberOf module:webgl-utils
      */
-  
   
     /**
      * Loads a shader.

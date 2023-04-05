@@ -12,6 +12,8 @@ var Node = function () {
 };
 
 Node.prototype.setParent = function (parent) {
+// the website argues that setParent is better than addChild
+
   // remove us from our parent
   if (this.parent) {
     var ndx = this.parent.children.indexOf(this);
@@ -52,6 +54,16 @@ function main() {
     return;
   }
 
+  //need a global object or class for this stuff
+  let prevMouse = [];
+  let mouseChange = [0,0];
+  let cameraRotate = {x:0, y:0, z:0};
+  let mouseDown = false;
+  let rotY = 0;
+  const initCameraPos = [0,-.01,-200];
+  const initCameraDist = m4.length(initCameraPos);
+  const initCameraVec = m4.normalize(initCameraPos);
+
   // creates buffers with position, normal, texcoord, and vertex color
   // data for primitives by calling gl.createBuffer, gl.bindBuffer,
   // and gl.bufferData
@@ -67,13 +79,15 @@ function main() {
   //we need to make it read from script so we can set
   //#version 300 es
   
-/*   var programInfo = webglUtils.createProgramInfo(gl, [
+  /*
+  var programInfo = webglUtils.createProgramInfo(gl, [
     "vertex-shader-3d",
     "fragment-shader-3d",
-  ]); */
+  ]); 
+  */
 
   const shaderText = [];
-  shaderText.push(shaders.vertexScreen);
+  shaderText.push(shaders.vertexScreen);    //straight shader text from template string
   shaderText.push(shaders.fragmentScreen);
 
   var programInfo = webglUtils.createProgramInfo(gl, shaderText);
@@ -100,7 +114,7 @@ function main() {
   // Let's make all the nodes
   var solarSystemNode = new Node();
   var earthOrbitNode = new Node();
-  earthOrbitNode.localMatrix = m4.translation(120, 0, 0); // earth orbit 100 units from the sun
+  earthOrbitNode.localMatrix = m4.translation(100, 0, 0); // earth orbit 100 units from the sun
   var moonOrbitNode = new Node();
   moonOrbitNode.localMatrix = m4.translation(30, 0, 0); // moon 30 units from the earth
 
@@ -148,6 +162,24 @@ function main() {
 
   var objectsToDraw = [sunNode.drawInfo, earthNode.drawInfo, moonNode.drawInfo];
 
+  canvas.addEventListener("mousemove", ev=>{
+    mouseChange = prevMouse[0] ? [ev.clientX-prevMouse[0], ev.clientY-prevMouse[1]] : [0,0];
+    prevMouse = [ev.clientX, ev.clientY];
+    
+    cameraRotate.y = mouseDown ? mouseChange[1] : 0;
+    cameraRotate.x = mouseDown ? mouseChange[0] : 0;
+
+    if (mouseDown) console.log(rotY);
+
+  });
+
+  canvas.addEventListener("mousedown", ev=>{
+    mouseDown = true;
+  });
+  canvas.addEventListener("mouseup", ev=>{
+    mouseDown = false;
+  })
+
   requestAnimationFrame(drawScene);
 
   // Draw the scene.
@@ -170,11 +202,22 @@ function main() {
     var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     var projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, 1, 2000);
 
+    rotY += cameraRotate.y/100;
+    rotY = Math.max(rotY,0);
+    rotY = Math.min(rotY,4);
+
     // Compute the camera's matrix using look at.
-    var cameraPosition = [0, -50, -200];
+    //let cameraPosition = m4.scaleVector(initCameraVec,initCameraDist);
+
+    //add the cumulative (but clamped) mouse change to the initial normalized cam vec
+    let newCam = m4.normalize(m4.addVectors(initCameraVec,[0,-rotY,0]));
+
+    //rescale to the same initial distance
+    newCam = m4.scaleVector(newCam,initCameraDist);
+
     var target = [0, 0, 0];
     var up = [0, 0, 1];
-    var cameraMatrix = m4.lookAt(cameraPosition, target, up);
+    var cameraMatrix = m4.lookAt(newCam, target, up);
 
     // Make a view matrix from the camera matrix.
     var viewMatrix = m4.inverse(cameraMatrix);
@@ -183,26 +226,32 @@ function main() {
 
     // update the local matrices for each object.
     m4.multiply(
-      m4.yRotation(0.003),
+      m4.yRotation(.003),
       earthOrbitNode.localMatrix,
       earthOrbitNode.localMatrix
     );
     m4.multiply(
-      m4.yRotation(0.01),
+      m4.yRotation(.003*13),
       moonOrbitNode.localMatrix,
       moonOrbitNode.localMatrix
     );
     // spin the earth
     m4.multiply(
-      m4.yRotation(0.05),
+      m4.yRotation(.003*365),
       earthNode.localMatrix,
       earthNode.localMatrix
     );
     // spin the moon
     m4.multiply(
-      m4.yRotation(-0.01),
+      m4.yRotation(.003*13),
       moonNode.localMatrix,
       moonNode.localMatrix
+    );
+
+    m4.multiply(
+      m4.yRotation(.003*13),
+      sunNode.localMatrix,
+      sunNode.localMatrix
     );
 
     // Update all world matrices in the scene graph
