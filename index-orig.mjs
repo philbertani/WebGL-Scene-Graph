@@ -1,51 +1,43 @@
 "use strict";
 
-//DAG version
-
 import * as m4 from "./m4.mjs"
 import * as webglUtils from "./webgl-utils.mjs"
 import * as primitives from "./primitives.mjs"
 import * as shaders from "./shaders.mjs"
 
-//node type of 1 means we want to actually render the thing
-var Node = function (name,type=0) {
-  this.name = name;  
+var Node = function () {
   this.children = [];
-  this.parents = [];
-  this.parentIndex = 0;
   this.localMatrix = m4.identity();
   this.worldMatrix = m4.identity();
-  this.parentCount = 0;
-  this.type = type;
 };
 
-Node.prototype.addChild = function(node) {
-    this.children.push(node)
-};
+Node.prototype.setParent = function (parent) {
+// the website argues that setParent is better than addChild
 
-Node.prototype.copy = function(node) {
-  const copyNode = new Node(node.name + "-copy");
-  copyNode.localMatrix = node.localMatrix;
-  copyNode.worldMatrix = node.worldMatrix;
-  if (node.drawInfo) {
-    copyNode.drawInfo = {};  //need new object
-    copyNode.drawInfo.bufferInfo = this.drawInfo.bufferInfo;  //copy references
-    copyNode.drawInfo.programInfo = this.drawInfo.programInfo;
-    copyNode.drawInfo.uniforms = node.drawInfo.uniforms;
+  // remove us from our parent
+  if (this.parent) {
+    var ndx = this.parent.children.indexOf(this);
+    if (ndx >= 0) {
+      this.parent.children.splice(ndx, 1);
+    }
   }
-  return copyNode;
-}
+
+  // Add us to our new parent
+  if (parent) {
+    parent.children.push(this);
+  }
+
+  //need to be able to have multiple parents for DAG
+  this.parent = parent;
+};
 
 Node.prototype.updateWorldMatrix = function (parentWorldMatrix) {
-
-  if (this.type === 0) {
-    if (parentWorldMatrix) {
-      // a matrix was passed in so do the math
-      m4.multiply(parentWorldMatrix, this.localMatrix, this.worldMatrix);
-    } else {
-      // no matrix was passed in so just copy local to world
-      m4.copy(this.localMatrix, this.worldMatrix);
-    }
+  if (parentWorldMatrix) {
+    // a matrix was passed in so do the math
+    m4.multiply(parentWorldMatrix, this.localMatrix, this.worldMatrix);
+  } else {
+    // no matrix was passed in so just copy local to world
+    m4.copy(this.localMatrix, this.worldMatrix);
   }
 
   // now process all the children
@@ -78,11 +70,26 @@ function main() {
   // data for primitives by calling gl.createBuffer, gl.bindBuffer,
   // and gl.bufferData
   const sphereBufferInfo = primitives.createSphereWithVertexColorsBufferInfo(
-    gl,7,32,22
+    gl,
+    7,
+    32,
+    22
   );
 
+  // setup GLSL program
+  //this is reading shaders directly from html file
+  //we need to make it read from script so we can set
+  //#version 300 es
+  
+  /*
+  var programInfo = webglUtils.createProgramInfo(gl, [
+    "vertex-shader-3d",
+    "fragment-shader-3d",
+  ]); 
+  */
+
   const shaderText = [];
-  shaderText.push(shaders.vertexScreen);    //shader text from template string
+  shaderText.push(shaders.vertexScreen);    //straight shader text from template string
   shaderText.push(shaders.fragmentScreen);
 
   var programInfo = webglUtils.createProgramInfo(gl, shaderText);
@@ -91,82 +98,74 @@ function main() {
     return (d * Math.PI) / 180;
   }
 
-  const fieldOfViewRadians = degToRad(70);
+  function rand(min, max) {
+    return Math.random() * (max - min) + min;
+  }
 
-  const solarSystemNode = new Node("solar system");
-  const earthOrbitNode = new Node("earth orbit");
+  function emod(x, n) {
+    return x >= 0 ? x % n : (n - (-x % n)) % n;
+  }
+
+  var cameraAngleRadians = degToRad(0);
+  var fieldOfViewRadians = degToRad(70);
+  var cameraHeight = 50;
+
+  var objectsToDraw = [];
+  var objects = [];
+
+  // Let's make all the nodes
+  var solarSystemNode = new Node();
+  var earthOrbitNode = new Node();
   earthOrbitNode.localMatrix = m4.translation(100, 0, 0); // earth orbit 100 units from the sun
-  const moonOrbitNode = new Node("moon orbit");
+  var moonOrbitNode = new Node();
   moonOrbitNode.localMatrix = m4.translation(30, 0, 0); // moon 30 units from the earth
 
-  const sunNode = new Node("sun");
-  sunNode.localMatrix = m4.scaling(5, 5, 5); // sun at the center
+  var sunNode = new Node();
+  sunNode.localMatrix = m4.scaling(5, 5, 5); // sun a the center
   sunNode.drawInfo = {
     uniforms: {
       u_colorOffset: [0.6, 0.6, 0, 1], // yellow
       u_colorMult: [0.4, 0.4, 0, 1],
     },
+    programInfo: programInfo,
+    bufferInfo: sphereBufferInfo,
   };
 
-  const earthNode = new Node("earth");
-  earthNode.localMatrix = m4.scaling(2, 2, 2);
+  var earthNode = new Node();
+  earthNode.localMatrix = m4.scaling(2, 2, 2); // make the earth twice as large
   earthNode.drawInfo = {
     uniforms: {
       u_colorOffset: [0.2, 0.5, 0.8, 1], // blue-green
       u_colorMult: [0.8, 0.5, 0.2, 1],
     },
+    programInfo: programInfo,
+    bufferInfo: sphereBufferInfo,
   };
 
-  const moonNode = new Node("moon");
+  var moonNode = new Node();
   moonNode.localMatrix = m4.scaling(0.8, 0.8, 0.8);
   moonNode.drawInfo = {
     uniforms: {
       u_colorOffset: [0.6, 0.6, 0.6, 1], // gray
       u_colorMult: [0.1, 0.1, 0.1, 1],
     },
+    programInfo: programInfo,
+    bufferInfo: sphereBufferInfo,
   };
 
-  //this is the only vertex object model we have
-  const sphere = new Node("sphere",1);
-  sphere.drawInfo = {
-    programInfo: programInfo,
-    bufferInfo:  sphereBufferInfo
-  }
+  const objectToDrawNode = new Node();
 
-  solarSystemNode.addChild(sunNode);
-  solarSystemNode.addChild(earthOrbitNode);
 
-  earthOrbitNode.addChild(earthNode);
-  earthOrbitNode.addChild(moonOrbitNode);
-  moonOrbitNode.addChild(moonNode);
+  // connect the celetial objects
+  sunNode.setParent(solarSystemNode);
+  earthOrbitNode.setParent(solarSystemNode);
+  earthNode.setParent(earthOrbitNode);
+  moonOrbitNode.setParent(earthOrbitNode);
+  moonNode.setParent(moonOrbitNode);
 
-  sunNode.addChild(sphere);
-  earthNode.addChild(sphere);
-  moonNode.addChild(sphere);
+  var objects = [sunNode, earthNode, moonNode];
 
-  const renderObjects = [];
-
-  solarSystemNode.updateWorldMatrix();
-
-  //find the objects to render that are at the end of each path
-  function dagTraverse(node) {
-    console.log(node.name,node.parentCount,node.type);
-
-    if (node.type === 1) {
-      if ( node.parents.length > 0) {
-        //new node as we get each new parent
-        const newNode = node.copy(node.parents[node.parentCount])
-        renderObjects.push(newNode)
-      }
-    }
-    node.parentCount ++;  //more than 1 path to this node
-
-    node.children.forEach(child=>{ child.parents.push(node); dagTraverse(child)});
-  }
-
-  dagTraverse(solarSystemNode);
-
-  //console.log(renderObjects)
+  var objectsToDraw = [sunNode.drawInfo, earthNode.drawInfo, moonNode.drawInfo];
 
   canvas.addEventListener("mousemove", ev=>{
     mouseChange = prevMouse[0] ? [ev.clientX-prevMouse[0], ev.clientY-prevMouse[1]] : [0,0];
@@ -174,6 +173,8 @@ function main() {
     
     cameraRotate.y = mouseDown ? mouseChange[1] : 0;
     cameraRotate.x = mouseDown ? mouseChange[0] : 0;
+
+    if (mouseDown) console.log(rotY);
 
   });
 
@@ -188,7 +189,6 @@ function main() {
 
   // Draw the scene.
   function drawScene(time) {
-
     time *= 0.0005;
 
     webglUtils.resizeCanvasToDisplaySize(gl.canvas);
@@ -204,14 +204,15 @@ function main() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // Compute the projection matrix
-    const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-    const projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, 1, 2000);
+    var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+    var projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, 1, 2000);
 
     rotY += cameraRotate.y/100;
     rotY = Math.max(rotY,0);
     rotY = Math.min(rotY,4);
 
     // Compute the camera's matrix using look at.
+    //let cameraPosition = m4.scaleVector(initCameraVec,initCameraDist);
 
     //add the cumulative (but clamped) mouse change to the initial normalized cam vec
     let newCam = m4.normalize(m4.addVectors(initCameraVec,[0,-rotY,0]));
@@ -219,14 +220,14 @@ function main() {
     //rescale to the same initial distance
     newCam = m4.scaleVector(newCam,initCameraDist);
 
-    const target = [0, 0, 0];
-    const up = [0, 0, 1];
-    const cameraMatrix = m4.lookAt(newCam, target, up);
+    var target = [0, 0, 0];
+    var up = [0, 0, 1];
+    var cameraMatrix = m4.lookAt(newCam, target, up);
 
     // Make a view matrix from the camera matrix.
-    const viewMatrix = m4.inverse(cameraMatrix);
+    var viewMatrix = m4.inverse(cameraMatrix);
 
-    const viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
+    var viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
 
     // update the local matrices for each object.
     m4.multiply(
@@ -262,9 +263,7 @@ function main() {
     solarSystemNode.updateWorldMatrix();
 
     // Compute all the matrices for rendering
-    // multiplying matrices like this wastes time and space
-    // multiply worldMatrix by vector first if we can
-    renderObjects.forEach(function (object) {
+    objects.forEach(function (object) {
       object.drawInfo.uniforms.u_matrix = m4.multiply(
         viewProjectionMatrix,
         object.worldMatrix
@@ -273,16 +272,13 @@ function main() {
 
     // ------ Draw the objects --------
 
-    let lastUsedProgramInfo = null;
-    let lastUsedBufferInfo = null;
+    var lastUsedProgramInfo = null;
+    var lastUsedBufferInfo = null;
 
-    renderObjects.forEach(function (objectx) {
-
-      const object = objectx.drawInfo;
-
-      const programInfo = object.programInfo;
-      const bufferInfo = object.bufferInfo;
-      let bindBuffers = false;
+    objectsToDraw.forEach(function (object) {
+      var programInfo = object.programInfo;
+      var bufferInfo = object.bufferInfo;
+      var bindBuffers = false;
 
       if (programInfo !== lastUsedProgramInfo) {
         lastUsedProgramInfo = programInfo;
