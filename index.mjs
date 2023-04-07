@@ -70,7 +70,7 @@ function main() {
   let cameraRotate = {x:0, y:0, z:0};
   let mouseDown = false;
   let rotY = 0;
-  const initCameraPos = [0,-.01,-200];
+  const initCameraPos = [0,-.005,-200];
   const initCameraDist = m4.length(initCameraPos);
   const initCameraVec = m4.normalize(initCameraPos);
 
@@ -78,12 +78,12 @@ function main() {
   // data for primitives by calling gl.createBuffer, gl.bindBuffer,
   // and gl.bufferData
   const sphereBufferInfo = primitives.createSphereWithVertexColorsBufferInfo(
-    gl,7,32,22
+    gl,7,35,21
   );
 
   const shaderText = [];
-  shaderText.push(shaders.vertexScreen);    //shader text from template string
-  shaderText.push(shaders.fragmentScreen);
+  shaderText.push(shaders.vertexScreenLit);    //shader text from template string
+  shaderText.push(shaders.fragmentScreenLit);
 
   var programInfo = webglUtils.createProgramInfo(gl, shaderText);
 
@@ -95,34 +95,50 @@ function main() {
 
   const solarSystemNode = new Node("solar system");
   const earthOrbitNode = new Node("earth orbit");
-  earthOrbitNode.localMatrix = m4.translation(100, 0, 0); // earth orbit 100 units from the sun
+  earthOrbitNode.localMatrix = m4.translation(110, 0, 0); // earth orbit 100 units from the sun
+  
   const moonOrbitNode = new Node("moon orbit");
-  moonOrbitNode.localMatrix = m4.translation(30, 0, 0); // moon 30 units from the earth
+  moonOrbitNode.localMatrix = m4.translation(40, 0, 0); // moon 30 units from the earth
+
+  const moon2Orbit = new Node("moon2 orbit");
+  moon2Orbit.localMatrix = m4.translation(35,0,0);
+  m4.multiply( m4.yRotation(1.5), moon2Orbit.localMatrix, moon2Orbit.localMatrix);
 
   const sunNode = new Node("sun");
-  sunNode.localMatrix = m4.scaling(5, 5, 5); // sun at the center
+  sunNode.localMatrix = m4.scaling(6, 6, 6); // sun at the center
   sunNode.drawInfo = {
     uniforms: {
-      u_colorOffset: [0.6, 0.6, 0, 1], // yellow
-      u_colorMult: [0.4, 0.4, 0, 1],
+      u_colorOffset: [1.5, 1.5, .7, 1], // yellow
+      u_colorMult: [1., 1., 0, 1],
     },
   };
 
+  //the faces need to be computed at a tilt that lines up with 
+  //the axial tilt or we just wind up rotating around wrong axis
   const earthNode = new Node("earth");
-  earthNode.localMatrix = m4.scaling(2, 2, 2);
+  earthNode.localMatrix = m4.scaling(3, 3, 3);
   earthNode.drawInfo = {
     uniforms: {
-      u_colorOffset: [0.2, 0.5, 0.8, 1], // blue-green
-      u_colorMult: [0.8, 0.5, 0.2, 1],
+      u_colorOffset: [0.1, 0.4, 0.7, 1], // blue-green
+      u_colorMult: [0.8, 0.6, 0.3, 1],
     },
   };
 
   const moonNode = new Node("moon");
-  moonNode.localMatrix = m4.scaling(0.8, 0.8, 0.8);
+  moonNode.localMatrix = m4.scaling(1.5, 1.5, 1.5);
   moonNode.drawInfo = {
     uniforms: {
-      u_colorOffset: [0.6, 0.6, 0.6, 1], // gray
-      u_colorMult: [0.1, 0.1, 0.1, 1],
+      u_colorOffset: [0.4, 0.4, 0.4, 1], // gray
+      u_colorMult: [0.3, 0.3, 0.3, 1],
+    },
+  };
+
+  const moon2 = new Node("moon2");
+  moon2.localMatrix = m4.scaling(.7,.8,.7);
+  moon2.drawInfo = {
+    uniforms: {
+      u_colorOffset: [.5,.3,.2,1],
+      u_colorMult: [.3,.3,.3,1]
     },
   };
 
@@ -137,16 +153,21 @@ function main() {
   solarSystemNode.addChild(earthOrbitNode);
 
   earthOrbitNode.addChild(earthNode);
+
   earthOrbitNode.addChild(moonOrbitNode);
   moonOrbitNode.addChild(moonNode);
+
+  earthOrbitNode.addChild(moon2Orbit);
+  moon2Orbit.addChild(moon2);
 
   sunNode.addChild(sphere);
   earthNode.addChild(sphere);
   moonNode.addChild(sphere);
+  moon2.addChild(sphere);
 
   const renderObjects = [];
 
-  solarSystemNode.updateWorldMatrix();
+  //solarSystemNode.updateWorldMatrix();
 
   //find the objects to render that are at the end of each path
   function dagTraverse(node) {
@@ -166,7 +187,7 @@ function main() {
 
   dagTraverse(solarSystemNode);
 
-  //console.log(renderObjects)
+  console.log(renderObjects);
 
   canvas.addEventListener("mousemove", ev=>{
     mouseChange = prevMouse[0] ? [ev.clientX-prevMouse[0], ev.clientY-prevMouse[1]] : [0,0];
@@ -227,33 +248,42 @@ function main() {
     const viewMatrix = m4.inverse(cameraMatrix);
 
     const viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
-
+ 
+    const earthAxis = m4.normalize([.5,1.,.2]);
     // update the local matrices for each object.
     m4.multiply(
-      m4.yRotation(.003),
+      m4.yRotation(.001),
       earthOrbitNode.localMatrix,
       earthOrbitNode.localMatrix
     );
+
     m4.multiply(
-      m4.yRotation(.003*13),
-      moonOrbitNode.localMatrix,
-      moonOrbitNode.localMatrix
-    );
-    // spin the earth
-    m4.multiply(
-      m4.yRotation(.003*365),
+      m4.axisRotation(earthAxis,.003*6),
       earthNode.localMatrix,
       earthNode.localMatrix
     );
+
+    m4.multiply(
+      m4.axisRotation(earthAxis,.003*6),
+      moonOrbitNode.localMatrix,
+      moonOrbitNode.localMatrix
+    );
+
+    m4.multiply(
+      m4.yRotation(.003*11),
+      moon2Orbit.localMatrix,
+      moon2Orbit.localMatrix
+    );
+
     // spin the moon
     m4.multiply(
-      m4.yRotation(.003*13),
+      m4.yRotation(.003*2),
       moonNode.localMatrix,
       moonNode.localMatrix
     );
 
     m4.multiply(
-      m4.yRotation(.003*13),
+      m4.yRotation(.003*2),
       sunNode.localMatrix,
       sunNode.localMatrix
     );
@@ -262,13 +292,16 @@ function main() {
     solarSystemNode.updateWorldMatrix();
 
     // Compute all the matrices for rendering
-    // multiplying matrices like this wastes time and space
-    // multiply worldMatrix by vector first if we can
     renderObjects.forEach(function (object) {
       object.drawInfo.uniforms.u_matrix = m4.multiply(
         viewProjectionMatrix,
         object.worldMatrix
       );
+
+      //we need to send perspective, view-world (modelView) and normal transform matrices 
+      object.drawInfo.uniforms.u_P = projectionMatrix;
+      object.drawInfo.uniforms.u_VW = m4.multiply(viewMatrix,object.worldMatrix);
+      object.drawInfo.uniforms.u_N = m4.normalFromMat4(object.drawInfo.uniforms.u_VW);
     });
 
     // ------ Draw the objects --------
