@@ -36,6 +36,8 @@
  */
 
 //converted to a normal module... pb
+//this library is a littly wonky compared to glMatrix.js
+//for example: the lookAt function does not really work well
 
     "use strict";
   
@@ -1472,7 +1474,6 @@
     
       return out;
     }
-
 
     export {
       copy,

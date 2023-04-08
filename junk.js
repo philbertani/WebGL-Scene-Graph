@@ -197,11 +197,19 @@ function main() {
 
   });
 
-  //eck's stuff works beautifully
+  canvas.addEventListener("mousedown", ev=>{
+    mouseDown = true;
+  });
+  canvas.addEventListener("mouseup", ev=>{
+    mouseDown = false;
+  })
+
   let rotator = new SimpleRotator(canvas);
   rotator.setViewDistance(200);
   rotator.setRotationCenter( [0,0,0] );
 
+  //console.log( m4.lookAt2(cameraPos, [0,0,0], [0,0,1]) );
+  
   requestAnimationFrame(drawScene);
 
   let prevCameraPos = [...cameraPos];
@@ -227,7 +235,30 @@ function main() {
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     const projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, 1, 2000);
 
-    //from simple-rotator.js by master eck
+    rotY = -cameraRotate.y/300;
+    cumRotY += rotY;
+    if ( Math.abs(cumRotY) > Math.PI/2)  rotY = 0;
+    
+    // Compute the camera's matrix using look at.
+
+    //add the cumulative (but clamped) mouse change to the initial normalized cam vec
+    let newCam = m4.normalize(m4.addVectors(initCameraVec,[0,-rotY,0]));
+    //rescale to the same initial distance
+    newCam = m4.scaleVector(newCam,initCameraDist);
+
+    cameraPos = m4.transformPoint(m4.xRotation(upMult*rotY),cameraPos);
+
+    let up = [0,0,1];
+    if ( cameraPos[1] * prevCameraPos[1] < 0 ) {
+      console.log('xxxxxxx');
+      //upMult *= -1;
+    }
+
+    prevCameraPos = [...cameraPos];
+
+    const target = [0, 0, 0];
+  
+    //const cameraMatrix = m4.lookAt(cameraPos, target, up);
     const viewMatrix = rotator.getViewMatrix();
 
     const viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
