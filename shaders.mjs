@@ -46,7 +46,6 @@ out vec3 v_normal;
 out vec3 v_eyeCoords;
 out vec3 v_pos;
 
-uniform mat4 u_matrix;
 out vec4 v_color;
 uniform mat4 u_P, u_VW; //projection, view-world
 

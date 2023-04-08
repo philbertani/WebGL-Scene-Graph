@@ -94,16 +94,6 @@ function main() {
   const fieldOfViewRadians = degToRad(70);
 
   const solarSystemNode = new Node("solar system");
-  const earthOrbitNode = new Node("earth orbit");
-  earthOrbitNode.localMatrix = m4.translation(110, 0, 0); // earth orbit 100 units from the sun
-  
-  const moonOrbitNode = new Node("moon orbit");
-  moonOrbitNode.localMatrix = m4.translation(40, 0, 0); // moon 30 units from the earth
-
-  const moon2Orbit = new Node("moon2 orbit");
-  moon2Orbit.localMatrix = m4.translation(35,0,0);
-  m4.multiply( m4.yRotation(1.5), moon2Orbit.localMatrix, moon2Orbit.localMatrix);
-
   const sunNode = new Node("sun");
   sunNode.localMatrix = m4.scaling(6, 6, 6); // sun at the center
   sunNode.drawInfo = {
@@ -113,8 +103,8 @@ function main() {
     },
   };
 
-  //the faces need to be computed at a tilt that lines up with 
-  //the axial tilt or we just wind up rotating around wrong axis
+  const earthOrbitNode = new Node("earth orbit");
+  earthOrbitNode.localMatrix = m4.translation(110, 0, 0);
   const earthNode = new Node("earth");
   earthNode.localMatrix = m4.scaling(3, 3, 3);
   earthNode.drawInfo = {
@@ -124,8 +114,17 @@ function main() {
     },
   };
 
+  //displace the moon out of the ecliptic
+  const moonOrbitPlane = m4.normalize([1,.3,0]);
+  //the axis of rotation for this plane is above vector rotated around z axis
+  //by 90 degrees
+  const moonOrbitAxis = m4.transformPoint(m4.zRotation(Math.PI/2),moonOrbitPlane);
+  const moonOrbitNode = new Node("moon orbit");
+  const mT = m4.scaleVector(moonOrbitPlane,40);
+  console.log(mT)
+  moonOrbitNode.localMatrix = m4.translation(mT[0],mT[1],mT[2]); // moon 30 units from the earth
   const moonNode = new Node("moon");
-  moonNode.localMatrix = m4.scaling(1.5, 1.5, 1.5);
+  moonNode.localMatrix = m4.scaling(1.2, 1.2, 1.2);
   moonNode.drawInfo = {
     uniforms: {
       u_colorOffset: [0.4, 0.4, 0.4, 1], // gray
@@ -133,8 +132,11 @@ function main() {
     },
   };
 
+  const moon2Orbit = new Node("moon2 orbit");
+  moon2Orbit.localMatrix = m4.translation(29,0,0);
+  m4.multiply( m4.yRotation(Math.PI), moon2Orbit.localMatrix, moon2Orbit.localMatrix);
   const moon2 = new Node("moon2");
-  moon2.localMatrix = m4.scaling(.7,.8,.7);
+  moon2.localMatrix = m4.scaling(.5,.6,.5);
   moon2.drawInfo = {
     uniforms: {
       u_colorOffset: [.5,.3,.2,1],
@@ -151,23 +153,17 @@ function main() {
 
   solarSystemNode.addChild(sunNode);
   solarSystemNode.addChild(earthOrbitNode);
-
   earthOrbitNode.addChild(earthNode);
-
   earthOrbitNode.addChild(moonOrbitNode);
   moonOrbitNode.addChild(moonNode);
-
   earthOrbitNode.addChild(moon2Orbit);
   moon2Orbit.addChild(moon2);
-
   sunNode.addChild(sphere);
   earthNode.addChild(sphere);
   moonNode.addChild(sphere);
   moon2.addChild(sphere);
 
   const renderObjects = [];
-
-  //solarSystemNode.updateWorldMatrix();
 
   //find the objects to render that are at the end of each path
   function dagTraverse(node) {
@@ -236,35 +232,30 @@ function main() {
 
     //add the cumulative (but clamped) mouse change to the initial normalized cam vec
     let newCam = m4.normalize(m4.addVectors(initCameraVec,[0,-rotY,0]));
-
     //rescale to the same initial distance
     newCam = m4.scaleVector(newCam,initCameraDist);
-
     const target = [0, 0, 0];
     const up = [0, 0, 1];
     const cameraMatrix = m4.lookAt(newCam, target, up);
-
     // Make a view matrix from the camera matrix.
     const viewMatrix = m4.inverse(cameraMatrix);
-
     const viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
  
-    const earthAxis = m4.normalize([.5,1.,.2]);
     // update the local matrices for each object.
     m4.multiply(
-      m4.yRotation(.001),
+      m4.yRotation(.002),
       earthOrbitNode.localMatrix,
       earthOrbitNode.localMatrix
     );
 
     m4.multiply(
-      m4.axisRotation(earthAxis,.003*6),
+      m4.axisRotation(moonOrbitAxis,.003*6),
       earthNode.localMatrix,
       earthNode.localMatrix
     );
 
     m4.multiply(
-      m4.axisRotation(earthAxis,.003*6),
+      m4.axisRotation(moonOrbitAxis,.003*3),
       moonOrbitNode.localMatrix,
       moonOrbitNode.localMatrix
     );
@@ -277,13 +268,13 @@ function main() {
 
     // spin the moon
     m4.multiply(
-      m4.yRotation(.003*2),
+      m4.axisRotation(moonOrbitAxis,.003*3),
       moonNode.localMatrix,
       moonNode.localMatrix
     );
 
     m4.multiply(
-      m4.yRotation(.003*2),
+      m4.yRotation(.003*3),
       sunNode.localMatrix,
       sunNode.localMatrix
     );
@@ -293,10 +284,8 @@ function main() {
 
     // Compute all the matrices for rendering
     renderObjects.forEach(function (object) {
-      object.drawInfo.uniforms.u_matrix = m4.multiply(
-        viewProjectionMatrix,
-        object.worldMatrix
-      );
+      //we can add as many uniforms as we like here,
+      //webglUtils.setBuffersAndAttributes will automatically take care of them
 
       //we need to send perspective, view-world (modelView) and normal transform matrices 
       object.drawInfo.uniforms.u_P = projectionMatrix;
@@ -304,17 +293,16 @@ function main() {
       object.drawInfo.uniforms.u_N = m4.normalFromMat4(object.drawInfo.uniforms.u_VW);
     });
 
-    // ------ Draw the objects --------
 
     let lastUsedProgramInfo = null;
     let lastUsedBufferInfo = null;
 
-    renderObjects.forEach(function (objectx) {
+    renderObjects.forEach(function (object) {
 
-      const object = objectx.drawInfo;
+      const drawInfo = object.drawInfo;
 
-      const programInfo = object.programInfo;
-      const bufferInfo = object.bufferInfo;
+      const programInfo = drawInfo.programInfo;
+      const bufferInfo = drawInfo.bufferInfo;
       let bindBuffers = false;
 
       if (programInfo !== lastUsedProgramInfo) {
@@ -335,7 +323,7 @@ function main() {
       }
 
       // Set the uniforms.
-      webglUtils.setUniforms(programInfo, object.uniforms);
+      webglUtils.setUniforms(programInfo, drawInfo.uniforms);
 
       // Draw
       gl.drawArrays(gl.TRIANGLES, 0, bufferInfo.numElements);
