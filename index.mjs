@@ -14,6 +14,7 @@ import {
 } from "./createScene.mjs"
 
 let stopRotation = false;
+let fps = 30;
 
 function main() {
 
@@ -35,16 +36,17 @@ function main() {
     stopRotation = this.checked;
   }
 
+  document.getElementById("fps").onchange = function() {
+    fps = this.valueAsNumber;
+  }
   render();
 
   function render() {
 
     let prevRenderTime = Date.now();
-    const fps = 24;
-    const fpsInterval = 1000 / fps;
-
+  
     //multiply base rotation by this to keep orbital velocties constant across diff FPS
-    const fpsAdjust = 240/fps;  
+
 
     requestAnimationFrame(drawScene);
 
@@ -52,6 +54,8 @@ function main() {
 
       requestAnimationFrame(drawScene);
 
+      const fpsAdjust = 240/fps;  
+      const fpsInterval = 1000 / fps;
       const currentRenderTime = Date.now();
       const elapsed = currentRenderTime - prevRenderTime;
       if (elapsed < fpsInterval ) return;

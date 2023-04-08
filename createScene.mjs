@@ -69,6 +69,31 @@ moon2Node.drawInfo = {
   },
 };
 
+const binaryOrbitNode = new Node("binary planetoids");
+binaryOrbitNode.localMatrix = m4.translation(0,80,0);
+m4.multiply( binaryOrbitNode.localMatrix, m4.xRotation(Math.PI/2), binaryOrbitNode.localMatrix);
+const b1OrbitNode = new Node("b1 orbit");
+const b2OrbitNode = new Node("b2 orbit");
+b1OrbitNode.localMatrix = m4.translation(15,0,0);
+b2OrbitNode.localMatrix = m4.translation(-15,0,0);
+const b1Node = new Node("b1");
+const b2Node = new Node("b2");
+b1Node.localMatrix = m4.scaling(1.7,1.7,1.7);
+b2Node.localMatrix = m4.scaling(1.7,1.7,1.7);
+b1Node.drawInfo = {
+  uniforms: {
+    u_colorOffset: [.4,.2,0,1],
+    u_colorMult: [ .3,.6,0,1]
+  }
+}
+b2Node.drawInfo = {
+  uniforms: {
+    u_colorOffset: [0,.2,.4,1],
+    u_colorMult: [ 0,.6,.3,1]
+  }
+}
+
+
 //this is the only vertex object model we have
 const sphereNode = new Node("sphere",1);
 sphereNode.drawInfo = {
@@ -78,16 +103,25 @@ sphereNode.drawInfo = {
 
 solarSystemNode.addChild(sunNode);
 solarSystemNode.addChild(earthOrbitNode);
+solarSystemNode.addChild(binaryOrbitNode);
+
 earthOrbitNode.addChild(earthNode);
 earthOrbitNode.addChild(moonOrbitNode);
 moonOrbitNode.addChild(moonNode);
 earthOrbitNode.addChild(moon2OrbitNode);
 moon2OrbitNode.addChild(moon2Node);
 
+binaryOrbitNode.addChild(b1OrbitNode);
+binaryOrbitNode.addChild(b2OrbitNode);
+b1OrbitNode.addChild(b1Node);
+b2OrbitNode.addChild(b2Node);
+
 sunNode.addChild(sphereNode);
 earthNode.addChild(sphereNode);
 moonNode.addChild(sphereNode);
 moon2Node.addChild(sphereNode);
+b1Node.addChild(sphereNode);
+b2Node.addChild(sphereNode);
 
 const renderObjects = [];
 //find the objects to render that are at the end of each path
@@ -114,44 +148,75 @@ dagTraverse(solarSystemNode);
 
 function updateLocalMatrices(fpsAdjust) {
 
-    const baseRot = .003 * fpsAdjust;
-    m4.multiply(
-        m4.yRotation(baseRot),
-        earthOrbitNode.localMatrix,
-        earthOrbitNode.localMatrix
-      );
-  
-      m4.multiply(
-        m4.axisRotation(moonOrbitAxis,baseRot*6),
-        earthNode.localMatrix,
-        earthNode.localMatrix
-      );
-  
-      m4.multiply(
-        m4.axisRotation(moonOrbitAxis,baseRot*2),
-        moonOrbitNode.localMatrix,
-        moonOrbitNode.localMatrix
-      );
-  
-      m4.multiply(
-        m4.yRotation(baseRot*6),
-        moon2OrbitNode.localMatrix,
-        moon2OrbitNode.localMatrix
-      );
-  
-      // spin the moon
-      m4.multiply(
-        m4.axisRotation(moonOrbitAxis,baseRot*2),
-        moonNode.localMatrix,
-        moonNode.localMatrix
-      );
-  
-      m4.multiply(
-        m4.yRotation(baseRot*2),
-        sunNode.localMatrix,
-        sunNode.localMatrix
-      );
+  const baseRot = 0.003 * fpsAdjust;
+  m4.multiply(
+    m4.yRotation(baseRot),
+    earthOrbitNode.localMatrix,
+    earthOrbitNode.localMatrix
+  );
 
+  m4.multiply(
+    m4.axisRotation(moonOrbitAxis, baseRot * 6),
+    earthNode.localMatrix,
+    earthNode.localMatrix
+  );
+
+  m4.multiply(
+    m4.axisRotation(moonOrbitAxis, baseRot * 2),
+    moonOrbitNode.localMatrix,
+    moonOrbitNode.localMatrix
+  );
+
+  m4.multiply(
+    m4.yRotation(baseRot * 6),
+    moon2OrbitNode.localMatrix,
+    moon2OrbitNode.localMatrix
+  );
+
+  // spin the moon
+  m4.multiply(
+    m4.axisRotation(moonOrbitAxis, baseRot * 2),
+    moonNode.localMatrix,
+    moonNode.localMatrix
+  );
+
+  m4.multiply(
+    m4.yRotation(baseRot * 2),
+    sunNode.localMatrix,
+    sunNode.localMatrix
+  );
+
+  m4.multiply(
+    m4.xRotation(baseRot),
+    binaryOrbitNode.localMatrix,
+    binaryOrbitNode.localMatrix
+  );
+
+  const binRot = m4.zRotation(baseRot*3);
+
+  m4.multiply(
+    binRot,
+    b1OrbitNode.localMatrix,
+    b1OrbitNode.localMatrix
+  );
+
+  m4.multiply(
+    binRot,
+    b2OrbitNode.localMatrix,
+    b2OrbitNode.localMatrix
+  );
+
+  m4.multiply(
+    binRot,
+    b1Node.localMatrix,
+    b1Node.localMatrix
+  );
+
+  m4.multiply(
+    binRot,
+    b2Node.localMatrix,
+    b2Node.localMatrix
+  );
 }
 
 
