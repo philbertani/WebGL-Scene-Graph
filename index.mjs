@@ -15,6 +15,7 @@ import {
 
 let stopRotation = false;
 let fps = 30;
+const maxFPS = 240;
 
 function main() {
 
@@ -37,7 +38,8 @@ function main() {
   }
 
   document.getElementById("fps").onchange = function() {
-    fps = this.valueAsNumber;
+    fps = Math.min(maxFPS,this.valueAsNumber);
+    document.getElementById("fps").valueAsNumber = fps;
   }
   render();
 
@@ -54,7 +56,7 @@ function main() {
 
       requestAnimationFrame(drawScene);
 
-      const fpsAdjust = 240/fps;  
+      const fpsAdjust = maxFPS/fps;  
       const fpsInterval = 1000 / fps;
       const currentRenderTime = Date.now();
       const elapsed = currentRenderTime - prevRenderTime;
