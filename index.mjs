@@ -25,11 +25,11 @@ function main() {
   function degToRad(d) {
     return (d * Math.PI) / 180;
   }
-  const fieldOfViewRadians = degToRad(70);
+  const fieldOfViewRadians = degToRad(40);
 
   //eck's stuff works beautifully
   let rotator = new SimpleRotator(canvas);
-  rotator.setViewDistance(200);
+  rotator.setViewDistance(350);
   rotator.setRotationCenter( [0,0,0] );
 
   document.getElementById("animCheckbox").onchange = function() {

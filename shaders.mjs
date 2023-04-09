@@ -83,9 +83,10 @@ void main() {
 
   vec3 newNormal = normalize( u_N * v_normal );
 
-  float cameraPos = -200.;
+  //need to send in cameraPos as uniform vec3 to make it general
+  float cameraPos = 350.;
   //this creates a point light source at 0,0,0
-  vec3 L = normalize( - (v_eyeCoords + vec3(0.,0., -cameraPos) )  );
+  vec3 L = normalize( - (v_eyeCoords + vec3(0.,0., cameraPos) )  );
   
   float ii = max(0., dot(L,newNormal) );
   finalColor = v_color * u_colorMult + u_colorOffset;
