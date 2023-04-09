@@ -73,16 +73,16 @@ moon2Node.drawInfo = {
 
 //this will be orbiting in the yz plane (xRotation)
 const binaryOrbitNode = new Node("binary planetoids");
-binaryOrbitNode.localMatrix = m4.translation(0,120,0);
+binaryOrbitNode.localMatrix = m4.translation(0,105,0);
 m4.multiply( binaryOrbitNode.localMatrix, m4.xRotation(Math.PI/2), binaryOrbitNode.localMatrix);
 const b1OrbitNode = new Node("b1 orbit");
 const b2OrbitNode = new Node("b2 orbit");
-b1OrbitNode.localMatrix = m4.translation(15,0,0);
-b2OrbitNode.localMatrix = m4.translation(-15,0,0);
+b1OrbitNode.localMatrix = m4.translation(20,0,0);
+b2OrbitNode.localMatrix = m4.translation(-20,0,0);
 const b1Node = new Node("b1");
 const b2Node = new Node("b2");
-b1Node.localMatrix = m4.scaling(1.1,1.1,1.5);
-b2Node.localMatrix = m4.scaling(1.1,1.1,1.5);
+b1Node.localMatrix = m4.scaling(1.5,1.5,2.5);
+b2Node.localMatrix = m4.scaling(1.5,1.5,2.5);
 b1Node.drawInfo = {
   uniforms: {
     u_colorOffset: [.3,.2,0,1],
