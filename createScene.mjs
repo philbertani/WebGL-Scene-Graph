@@ -7,6 +7,10 @@ import * as shaders from "./shaders.mjs"
 const canvas = document.querySelector("#canvas");
 const gl = canvas.getContext("webgl2");
 
+const newNodes = [];
+let numNewPlanets = 0;
+const rotFuncs = [];
+
 const shaderText = [];
 shaderText.push(shaders.vertexScreenLit);    //shader text from template string
 shaderText.push(shaders.fragmentScreenLit);
@@ -149,7 +153,6 @@ function dagTraverse(node) {
 
 dagTraverse(solarSystemNode);
 
-
 function updateLocalMatrices(fpsAdjust) {
 
   const baseRot = 0.003 * fpsAdjust;
@@ -221,8 +224,50 @@ function updateLocalMatrices(fpsAdjust) {
     b2Node.localMatrix,
     b2Node.localMatrix
   );
+
+  //execute the rotations for any user added planets
+  rotFuncs.forEach(func=>{func(baseRot)})
+
 }
 
+
+
+function addToSceneGraph(planetData) {
+  console.log(planetData);
+  numNewPlanets ++;
+  const newOrbitNode = new Node("new Orbit "+numNewPlanets);
+  const newPlanetNode = new Node("new Planet "+numNewPlanets);
+  newOrbitNode.localMatrix = m4.translation(planetData["dxSun"],0,0);
+  newPlanetNode.localMatrix = m4.scaling(planetData["size"],planetData["size"],planetData["size"])
+  newPlanetNode.drawInfo = {
+    uniforms: {
+      u_colorOffset: [.4,.4,0,1],
+      u_colorMult: [ 0,.5,.5,1]
+    }
+  }
+
+  solarSystemNode.addChild(newOrbitNode);
+  newOrbitNode.addChild(newPlanetNode);
+  newPlanetNode.addChild(sphereNode);
+
+  //need a factory function that returns rotation functions for new nodes
+  function makeRotFunc(node,rate) {
+    return function(baseRot) {
+      m4.multiply(m4.yRotation(baseRot*rate),node.localMatrix,node.localMatrix)
+    }
+  }
+
+  const orbitRotFunc = makeRotFunc(newOrbitNode,planetData["orbitRotation"]);
+  const planetRotFunc = makeRotFunc(newPlanetNode,planetData["planetRotation"]);
+
+  rotFuncs.push(orbitRotFunc);
+  rotFuncs.push(planetRotFunc);
+
+  //find the new paths in the DAG, reset the objects to render
+  renderObjects.length = 0;
+  dagTraverse(solarSystemNode);
+
+}
 
 export { 
     canvas,gl,
@@ -234,5 +279,6 @@ export {
     sphereNode,
     shaderText,
     renderObjects,
-    updateLocalMatrices
+    updateLocalMatrices,
+    addToSceneGraph
 }

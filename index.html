@@ -7,18 +7,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>WebGL - Scene Graph - Solar System</title>
     <script defer src="./bundle.js"></script>
+
+    <style>
+        form input {
+            text-align:center;
+            width:95%;
+        }
+    </style>
 </head>
 
 <body>
-    <div class="description">
+    <div id="controls" class="description">
         <p>
             <label><input type="checkbox" id="animCheckbox"/> <b>Stop Rotation</b></label>
             &nbsp &nbsp
             <label><input type="number" id="fps" value="30" style="width:60px"/> <b>FPS</b></label>
-            &nbsp &nbsp (Try -1 FPS just for fun) 
+            &nbsp &nbsp
+            Try -1 FPS just for fun...
         </p>
     </div>
-    <canvas style="width:90vw; height:90vh" id="canvas"></canvas>
+    <div id="newPlanet" 
+        style="position:fixed; right:0; width:18vw; 
+                margin-right:10px; text-align:center;
+                height:90vh; background-color:rgb(200,200,200);">
+
+        <h3>Add New Planet</h3>
+        <form id="addPlanet" style="text-align:center; width:100%">
+            <label for="dxSun">Distance From Sun</label>
+            <input id="dxSun" type="text" value="70">
+            <label for="size">Size</label>
+            <input id="size" type="text" value="2">
+            <label for="orbitRotation">Orbit Rotation</label>
+            <input id="orbitRotation" value="1">
+            <label for="planetRotation">Planet Rotation</label>
+            <input id="planetRotation" value="1">
+            <br></br>
+            <input type="submit" value="Get It Spinning!">
+        </form>
+
+    </div>
+    <canvas style="width:80vw; height:90vh" id="canvas"></canvas>
 </body>
 
 </html>

@@ -10,7 +10,8 @@ import {
   canvas, gl,
   solarSystemNode, 
   renderObjects,  //objects to render
-  updateLocalMatrices
+  updateLocalMatrices,
+  addToSceneGraph
 } from "./createScene.mjs"
 
 let stopRotation = false;
@@ -41,6 +42,23 @@ function main() {
     fps = Math.min(maxFPS,this.valueAsNumber);
     document.getElementById("fps").valueAsNumber = fps;
   }
+
+  document.getElementById("addPlanet").onsubmit = function(ev) {
+    ev.preventDefault()
+    //fields are: dxSun, size, orbitRotation, planetRotation
+    const fields = ["dxSun","size","orbitRotation","planetRotation"];
+    const planetData = {};
+    let valid=true;
+    for (const field of fields) {
+      planetData[field] = parseFloat(this.elements[field].value);
+      if (isNaN(planetData[field]) ) {
+        alert(`You have a problem in: ${field}`);
+        valid = false;
+      }
+    }
+    if (valid) addToSceneGraph(planetData)
+  }
+
   render();
 
   function render() {
