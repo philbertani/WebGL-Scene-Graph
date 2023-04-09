@@ -47,7 +47,7 @@ const moonOrbitAxis = m4.transformPoint(m4.zRotation(Math.PI/2),moonOrbitPlane);
 const moonOrbitNode = new Node("moon orbit");
 const mT = m4.scaleVector(moonOrbitPlane,30);
 //console.log(mT)
-moonOrbitNode.localMatrix = m4.translation(mT[0],mT[1],mT[2]); // moon 30 units from the earth
+moonOrbitNode.localMatrix = m4.translation(mT[0],mT[1],mT[2]); 
 const moonNode = new Node("moon");
 moonNode.localMatrix = m4.scaling(1.2, 1.2, 1.2);
 moonNode.drawInfo = {
@@ -69,8 +69,9 @@ moon2Node.drawInfo = {
   },
 };
 
+//this will be orbiting in the yz plane (xRotation)
 const binaryOrbitNode = new Node("binary planetoids");
-binaryOrbitNode.localMatrix = m4.translation(0,80,0);
+binaryOrbitNode.localMatrix = m4.translation(0,120,0);
 m4.multiply( binaryOrbitNode.localMatrix, m4.xRotation(Math.PI/2), binaryOrbitNode.localMatrix);
 const b1OrbitNode = new Node("b1 orbit");
 const b2OrbitNode = new Node("b2 orbit");
@@ -78,18 +79,18 @@ b1OrbitNode.localMatrix = m4.translation(15,0,0);
 b2OrbitNode.localMatrix = m4.translation(-15,0,0);
 const b1Node = new Node("b1");
 const b2Node = new Node("b2");
-b1Node.localMatrix = m4.scaling(1.7,1.7,1.7);
-b2Node.localMatrix = m4.scaling(1.7,1.7,1.7);
+b1Node.localMatrix = m4.scaling(1.1,1.1,1.5);
+b2Node.localMatrix = m4.scaling(1.1,1.1,1.5);
 b1Node.drawInfo = {
   uniforms: {
-    u_colorOffset: [.4,.2,0,1],
-    u_colorMult: [ .3,.6,0,1]
+    u_colorOffset: [.3,.2,0,1],
+    u_colorMult: [ .4,.6,0,1]
   }
 }
 b2Node.drawInfo = {
   uniforms: {
-    u_colorOffset: [0,.2,.4,1],
-    u_colorMult: [ 0,.6,.3,1]
+    u_colorOffset: [0,.2,.3,1],
+    u_colorMult: [ 0,.6,.4,1]
   }
 }
 
@@ -116,6 +117,7 @@ binaryOrbitNode.addChild(b2OrbitNode);
 b1OrbitNode.addChild(b1Node);
 b2OrbitNode.addChild(b2Node);
 
+//add multiple instances here of underlying vertex models
 sunNode.addChild(sphereNode);
 earthNode.addChild(sphereNode);
 moonNode.addChild(sphereNode);
