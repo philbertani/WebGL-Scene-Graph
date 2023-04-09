@@ -40,6 +40,8 @@ earthNode.drawInfo = {
 };
 
 //displace the moon out of the ecliptic
+//technically around 5 degrees but let's face it this
+//is not a realistic version of the solar system
 const moonOrbitPlane = m4.normalize([1,.3,0]);
 //the axis of rotation for this plane is above vector rotated around z axis
 //by 90 degrees
