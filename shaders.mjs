@@ -59,8 +59,9 @@ void main() {
   // Pass the color to the fragment shader.
   v_color = a_color;
   v_normal = normalize(a_normal); //in case it is not??
-  v_eyeCoords = eyeCoords.xyz; // / eyeCoords.w;
+  v_eyeCoords = eyeCoords.xyz;// / eyeCoords.w;
   v_pos = a_position.xyz;
+
 }
 `
 
@@ -76,6 +77,7 @@ in vec3 v_pos;
 uniform vec4 u_colorMult;
 uniform vec4 u_colorOffset;
 uniform mat3 u_N;  //matrix for transforming normals
+uniform float u_camDist;
 
 out vec4 finalColor;
 
@@ -83,10 +85,8 @@ void main() {
 
   vec3 newNormal = normalize( u_N * v_normal );
 
-  //need to send in cameraPos as uniform vec3 to make it general
-  float cameraPos = 350.;
   //this creates a point light source at 0,0,0
-  vec3 L = normalize( - (v_eyeCoords + vec3(0.,0., cameraPos) )  );
+  vec3 L = normalize( - (v_eyeCoords + vec3(0.,0., u_camDist) )  );
   
   float ii = max(0., dot(L,newNormal) );
   finalColor = v_color * u_colorMult + u_colorOffset;
@@ -94,6 +94,6 @@ void main() {
 
   finalColor *= (1. + ii*3.);
 
-  finalColor.xyz *= finalColor.xyz;  //moew dramatic lighting
+  finalColor.xyz *= finalColor.xyz;  //more dramatic lighting
 }
 `

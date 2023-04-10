@@ -59,6 +59,8 @@
 export default function SimpleRotator(canvas, callback, viewDistance, rotY, rotX) {
     canvas.addEventListener("mousedown", doMouseDown, false);
     canvas.addEventListener("touchstart", doTouchStart, false);
+    canvas.addEventListener("mousewheel", handleMouseWheel, false);
+
     var rotateX = (rotX === undefined)? 0 : rotX;
     var rotateY = (rotY === undefined)? 0 : rotY;
     var xLimit = 85;
@@ -205,5 +207,11 @@ export default function SimpleRotator(canvas, callback, viewDistance, rotY, rotX
            canvas.removeEventListener("touchend", doTouchEnd, false);
            canvas.removeEventListener("touchcancel", doTouchCancel, false);
         }
+    }
+
+    function handleMouseWheel(evt) {
+        //console.log(evt.deltaY)
+        const zoom = evt.deltaY < 0 ? -1 : 1;
+        viewDistance *= (1. + zoom/30);
     }
 }

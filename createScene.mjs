@@ -5,7 +5,8 @@ import * as primitives from "./primitives.mjs"
 import * as shaders from "./shaders.mjs"
 
 const canvas = document.querySelector("#canvas");
-const gl = canvas.getContext("webgl2");
+//webgl automatically does multisampling anti aliasing
+const gl = canvas.getContext("webgl2", {antialias:true, alpha:false});
 
 const newNodes = [];
 let numNewPlanets = 0;
@@ -19,6 +20,8 @@ const programInfo = webglUtils.createProgramInfo(gl, shaderText);
 const sphereBufferInfo = primitives.createSphereWithVertexColorsBufferInfo(
   gl,7,35,21
 );
+
+const cubeBufferInfo = primitives.createCubeWithVertexColorsBufferInfo(gl,1);
 
 const solarSystemNode = new Node("solar system");
 
@@ -106,6 +109,12 @@ const sphereNode = new Node("sphere",1);
 sphereNode.drawInfo = {
   programInfo: programInfo,
   bufferInfo:  sphereBufferInfo
+}
+
+const cubeNode = new Node("cube",1);
+cubeNode.drawInfo = {
+  programInfo: programInfo,
+  bufferInfo: cubeBufferInfo
 }
 
 solarSystemNode.addChild(sunNode);

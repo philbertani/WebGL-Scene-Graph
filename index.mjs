@@ -100,7 +100,7 @@ function main() {
         fieldOfViewRadians,
         aspect,
         1,
-        2000
+        1e6
       );
 
       //from simple-rotator.js by master eck
@@ -152,13 +152,15 @@ function main() {
         }
 
         // Set the uniforms.
+        drawInfo.uniforms.u_camDist = rotator.getViewDistance();
         webglUtils.setUniforms(programInfo, drawInfo.uniforms);
 
-        // Draw
-        gl.drawArrays(gl.TRIANGLES, 0, bufferInfo.numElements);
+        // if bufferInfo.indices exists it will use drawElements using the 
+        // ELEMENT_ARRAY_BUFFER
+        webglUtils.drawBufferInfo(gl,bufferInfo);
+
       });
 
- 
     }
   }
 
