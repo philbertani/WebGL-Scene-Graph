@@ -244,9 +244,35 @@ function updateLocalMatrices(fpsAdjust) {
 function addToSceneGraph(planetData) {
   console.log(planetData);
   numNewPlanets ++;
+
+  const {orbitTheta,orbitPhi,dxSun} = planetData;
+
+  let orbitVector = [dxSun,0,0];
+  let orbitAxis = [0,1,0];
+
+  if ( orbitTheta != 0) {
+    console.log("tilting orbit out of ecliptic");
+    orbitAxis = [ 
+      Math.sin(orbitTheta)*Math.cos(orbitPhi),
+      Math.cos(orbitTheta),
+      Math.sin(orbitTheta)*Math.sin(orbitPhi) ];
+
+    //we just need the vector that is 90 degrees from the axis
+    //for the plane of the planet
+    const angle2 = orbitTheta + Math.PI/2;
+    const orbitalPlaneVec = [
+      Math.sin(angle2)*Math.cos(orbitPhi),
+      Math.cos(angle2),
+      Math.sin(angle2)*Math.sin(orbitPhi) ];   
+    
+    orbitVector = m4.scaleVector(m4.normalize(orbitalPlaneVec),dxSun);
+
+  }
+
   const newOrbitNode = new Node("new Orbit "+numNewPlanets);
   const newPlanetNode = new Node("new Planet "+numNewPlanets);
-  newOrbitNode.localMatrix = m4.translation(planetData["dxSun"],0,0);
+  //newOrbitNode.localMatrix = m4.translation(planetData["dxSun"],0,0);
+  newOrbitNode.localMatrix = m4.translation(orbitVector[0],orbitVector[1],orbitVector[2]);
   newPlanetNode.localMatrix = m4.scaling(planetData["size"],planetData["size"],planetData["size"])
   newPlanetNode.drawInfo = {
     uniforms: {
@@ -266,7 +292,13 @@ function addToSceneGraph(planetData) {
     }
   }
 
-  const orbitRotFunc = makeRotFunc(newOrbitNode,planetData["orbitRotation"]);
+  function makeAxialRotFunc(node,axis,rate) {
+    return function(baseRot) {
+      m4.multiply(m4.axisRotation(axis,baseRot*rate),node.localMatrix,node.localMatrix);
+    }
+  }
+
+  const orbitRotFunc = makeAxialRotFunc(newOrbitNode,orbitAxis,planetData["orbitRotation"]);
   const planetRotFunc = makeRotFunc(newPlanetNode,planetData["planetRotation"]);
 
   rotFuncs.push(orbitRotFunc);

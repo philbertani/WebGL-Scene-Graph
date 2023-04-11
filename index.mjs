@@ -46,7 +46,7 @@ function main() {
   document.getElementById("addPlanet").onsubmit = function(ev) {
     ev.preventDefault()
     //fields are: dxSun, size, orbitRotation, planetRotation
-    const fields = ["dxSun","size","orbitRotation","planetRotation"];
+    const fields = ["dxSun","size","orbitRotation","planetRotation","orbitTheta","orbitPhi"];
     const planetData = {};
     let valid=true;
     for (const field of fields) {
