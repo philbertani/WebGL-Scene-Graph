@@ -239,8 +239,6 @@ function updateLocalMatrices(fpsAdjust) {
 
 }
 
-
-
 function addToSceneGraph(planetData) {
   console.log(planetData);
   numNewPlanets ++;
@@ -265,13 +263,14 @@ function addToSceneGraph(planetData) {
       Math.cos(angle2),
       Math.sin(angle2)*Math.sin(orbitPhi) ];   
     
+    //initial planet position needs to be at the end of this vector
+    //times the distance specified
     orbitVector = m4.scaleVector(m4.normalize(orbitalPlaneVec),dxSun);
 
   }
 
   const newOrbitNode = new Node("new Orbit "+numNewPlanets);
   const newPlanetNode = new Node("new Planet "+numNewPlanets);
-  //newOrbitNode.localMatrix = m4.translation(planetData["dxSun"],0,0);
   newOrbitNode.localMatrix = m4.translation(orbitVector[0],orbitVector[1],orbitVector[2]);
   newPlanetNode.localMatrix = m4.scaling(planetData["size"],planetData["size"],planetData["size"])
   newPlanetNode.drawInfo = {
