@@ -243,7 +243,7 @@ function addToSceneGraph(planetData) {
   console.log(planetData);
   numNewPlanets ++;
 
-  const {orbitTheta,orbitPhi,dxSun} = planetData;
+  const {orbitTheta,orbitPhi,dxSun,red,green,blue} = planetData;
 
   let orbitVector = [dxSun,0,0];
   let orbitAxis = [0,1,0];
@@ -275,8 +275,8 @@ function addToSceneGraph(planetData) {
   newPlanetNode.localMatrix = m4.scaling(planetData["size"],planetData["size"],planetData["size"])
   newPlanetNode.drawInfo = {
     uniforms: {
-      u_colorOffset: [.4,.4,0,1],
-      u_colorMult: [ 0,.5,.5,1]
+      u_colorOffset: [red/2,green/2,blue/2,1],
+      u_colorMult: [ red,green,blue,1]
     }
   }
 
