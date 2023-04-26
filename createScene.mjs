@@ -143,6 +143,7 @@ b2Node.addChild(sphereNode);
 const renderObjects = [];
 //find the objects to render that are at the end of each path
 function dagTraverse(node) {
+  
   //console.log(node.name, node.parentCount, node.type);
 
   if (node.type === 1) {

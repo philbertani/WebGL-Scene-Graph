@@ -1,5 +1,7 @@
 import * as m4 from "./m4.mjs";
 
+//node type of 1 means it is an actual vertex model
+//as opposed to a TRS node
 export default Node = function (name, type = 0) {
   this.name = name;
   this.children = [];

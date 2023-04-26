@@ -17,6 +17,7 @@ import {
 let stopRotation = false;
 let fps = 30;
 const maxFPS = 240;
+let mouse = {x:0, y:0};
 
 function main() {
 
@@ -33,6 +34,11 @@ function main() {
   let rotator = new SimpleRotator(canvas);
   rotator.setViewDistance(350);
   rotator.setRotationCenter( [0,0,0] );
+
+  document.addEventListener("mousemove",ev=>{
+    mouse.x = ev.clientX;
+    mouse.y = ev.clientY;
+  })
 
   document.getElementById("animCheckbox").onchange = function() {
     stopRotation = this.checked;
@@ -68,7 +74,7 @@ function main() {
   
     //multiply base rotation by this to keep orbital velocties constant across diff FPS
 
-
+    let frameCount = 0;
     requestAnimationFrame(drawScene);
 
     function drawScene(time) {
@@ -82,6 +88,7 @@ function main() {
       if (elapsed < fpsInterval ) return;
       prevRenderTime = currentRenderTime - (elapsed % fpsInterval);
 
+      frameCount ++;
       time *= 0.001;
       webglUtils.resizeCanvasToDisplaySize(gl.canvas);
 
@@ -101,7 +108,7 @@ function main() {
         fieldOfViewRadians,
         aspect,
         1,
-        1e6
+        1e6,
       );
 
       //from simple-rotator.js by master eck
@@ -130,6 +137,29 @@ function main() {
           object.drawInfo.uniforms.u_VW
         );
       });
+
+      //create mouse ray for picking objects
+      const mx = mouse.x / canvas.width * 2 - 1;
+      const my = -mouse.y / canvas.height * 2 + 1;
+      const mouseRay = [mx,my,-1,1];
+      const mouseRay2 = [mx,my,.999,1];
+      const inverseProj = m4.inverse(projectionMatrix);
+      const inverseView = m4.inverse(viewMatrix);
+      const mouseRayEye = m4.transformPoint(inverseProj,mouseRay);
+      const mouseRayEye2 = m4.transformPoint(inverseProj,mouseRay2);
+      const mouseRayWorld = m4.transformPoint(inverseView,mouseRayEye);
+      const mouseRayWorld2 = m4.transformPoint(inverseView,mouseRayEye2);
+
+      function rr(num) {
+        return Math.trunc( num * 1000 ) / 1000;
+      }
+
+      if (frameCount%30 === 0) {
+        console.log("start eye",rr(mouseRayEye[0]),rr(mouseRayEye[1]),rr(mouseRayEye[2]));
+        console.log("start:",rr(mouseRayWorld[0]),rr(mouseRayWorld[1]),rr(mouseRayWorld[2]));
+        console.log("end:",rr(mouseRayWorld2[0]),rr(mouseRayWorld2[1]),rr(mouseRayWorld2[2]));
+      }
+      //we have a start and end point - now how to figure out where it intersects anything??
 
       let lastUsedProgramInfo = null;
       let lastUsedBufferInfo = null;
